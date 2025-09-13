@@ -367,7 +367,7 @@ function [xdot, x_next] = dynamics_step_planar(P, x, f, geom, form)
     tau_mixed = A(2:4,:)*f;                  % torques from motor forces
 
     % Angular-rate dynamics
-    omegadot = I \ (tau_mixed - cross(omg, I*omg));
+    omegadot = I\(tau_mixed - cross(omg, I*omg));
 
     % 1st-order actuator (torque) dynamics
     taudot = (tau_mixed - tau)/P.tau_alpha;
@@ -455,12 +455,17 @@ function log = push_log_switching(log,k,t,x,yref,T_des,u_cmd,tau_cmd,f,form,geom
 end
 
 function plot_tracking_reports(P, log, env) %#ok<INUSD>
-    t=log.t; 
+    t=log.t;
     figure('Name','(A) Tracking — Trajectory performance (switching MPC)');
     subplot(3,1,1); plot(t, log.p(:,1),'LineWidth',1.5); grid on; ylabel('x [m]');
     yyaxis right; plot(t, log.width_y,'-','LineWidth',1.0); ylabel('width_y [m]');
     subplot(3,1,2); plot(t, log.p(:,2),'LineWidth',1.5); grid on; ylabel('y [m]');
     subplot(3,1,3); plot(t, log.p(:,3),'LineWidth',1.5); grid on; ylabel('z [m]'); xlabel('t [s]');
+
+    % 3D trajectory for spatial visualization
+    figure('Name','(A) Tracking — 3D Trajectory');
+    plot3(log.p(:,1), log.p(:,2), log.p(:,3), 'LineWidth',1.5);
+    grid on; xlabel('x [m]'); ylabel('y [m]'); zlabel('z [m]'); title('3D Trajectory'); axis equal;
 
     figure('Name','(A) Switching MPC — Attitude tracking');
     plot(t, log.eul(:,1:2),'LineWidth',1.5); hold on; plot(t, log.eul_ref(:,1:2),'--','LineWidth',1.2); grid on;
@@ -477,8 +482,14 @@ function plot_hold_reports(P, log)
     t=log.t;
     figure('Name','(B) Hold — Position response (switching MPC)');
     subplot(3,1,1); plot(t, log.p(:,1),'LineWidth',1.5); grid on; ylabel('x [m]'); title('Position hold while switching formations');
+    yyaxis right; plot(t, log.width_y,'-','LineWidth',1.0); ylabel('width_y [m]');
     subplot(3,1,2); plot(t, log.p(:,2),'LineWidth',1.5); grid on; ylabel('y [m]');
     subplot(3,1,3); plot(t, log.p(:,3),'LineWidth',1.5); grid on; ylabel('z [m]'); xlabel('t [s]');
+
+    % 3D trajectory plot
+    figure('Name','(B) Hold — 3D Trajectory');
+    plot3(log.p(:,1), log.p(:,2), log.p(:,3), 'LineWidth',1.5);
+    grid on; xlabel('x [m]'); ylabel('y [m]'); zlabel('z [m]'); title('3D Trajectory'); axis equal;
 
     figure('Name','(B) Hold — Attitude & refs');
     plot(t, log.eul(:,1:2),'LineWidth',1.2); hold on; plot(t, log.eul_ref(:,1:2),'--','LineWidth',1.2); grid on;
@@ -486,6 +497,10 @@ function plot_hold_reports(P, log)
 
     figure('Name','(B) Hold — Motor commands');
     plot(t, log.f,'LineWidth',1.2); grid on; xlabel('t [s]'); ylabel('f_i [N]'); legend('f1','f2','f3','f4');
+
+    % Formation/morphing state timeline
+    figure('Name','(B) Hold — Formation timeline');
+    stairs(t, categorical(log.form)); grid on; ylabel('formation'); xlabel('t [s]');
 end
 
 function plot_stability_thrust_dashboard(P, log)
